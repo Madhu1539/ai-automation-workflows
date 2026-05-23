@@ -292,21 +292,12 @@ ai-automation-workflows/
 
 ---
 
-## ⚠️ Security Notes
-
-- ✅ **All API keys have been removed** from workflow files and replaced with `YOUR_*_HERE` placeholders
-- ✅ **Never commit real credentials** — use n8n's built-in credential store instead
-- ✅ The `.gitignore` excludes `.env` files, credential files, and common secret patterns
-- ✅ Use environment variables in production n8n deployments
-
----
-
 ## 🤝 Connect With Me
 
 > *I'm a CS student actively building AI and automation projects. Open to internships, collaborations, and feedback!*
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/YOUR_LINKEDIN_HERE)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github)](https://github.com/YOUR_GITHUB_HERE)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/madhu-kushwaha-982b2a321/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github)](https://github.com/Madhu1539/)
 
 ---
 

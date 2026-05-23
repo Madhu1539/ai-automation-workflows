@@ -1,0 +1,166 @@
+{
+  "name": "Weather Daily Planner",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "25c3a950-0e30-4c26-899e-f9e6b84ad5c2",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "YOUR_CITY_HERE"
+            },
+            {
+              "name": "appid",
+              "value": "YOUR_OPENWEATHERMAP_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d037dedf-52e1-48b2-b7a8-a4cefa39e99f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI daily assistant creating a fun and personalized weather-based plan. Based on this weather data:\nTemperature: {{$json.main.temp}}°C\nWeather: {{$json.weather[0].description}}\nHumidity: {{$json.main.humidity}}%\nStart with a short, friendly greeting about today's weather (e.g., "Good morning! Here's your weather-ready plan for today!").\nThen create a concise plan with these sections:\nOUTFIT SUGGESTION\nRecommend one outfit suitable for today's weather.\nOUTDOOR ACTIVITY\nSuggest one fun outdoor activity, considering the temperature, weather, and humidity.\nWEATHER REMINDER\nInclude a practical, friendly tip (umbrella, sunscreen, jacket, or hydration reminder).\nFormatting rules:\nKeep it under 100 words.\nUse a friendly, engaging, and conversational tone.\nDo not use markdown formatting, bold, or special symbols.\nSeparate sections with line breaks and section titles in uppercase.\nSign off with: "Your Daily Weather Assistant"\n\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d9880f8f-c01f-40bc-851a-2198715c1166",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        208
+      ],
+      "id": "22ecf047-face-4dc5-bcdd-e67f3d6d6d46",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL_HERE",
+        "subject": "Your Daily Weather Planner",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "c274a04d-a6a4-4660-826d-1b34cf629c65",
+      "name": "Send a message",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

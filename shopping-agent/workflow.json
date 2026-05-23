@@ -1,0 +1,394 @@
+{
+  "name": "Shopping Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        112
+      ],
+      "id": "83d689ab-e229-43ce-b593-ad8d3d62dc19",
+      "name": "Telegram Trigger",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('If').item.json.message }}{{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are Maya, a shopping and styling assistant on Telegram.\n\n## Your Job\n\n1. **Product Search**: User asks \"shoes under 5000\" → Search Amazon → Show results\n2. **Styling Advice**: User asks \"how to style blue jeans\" or \"outfit for wedding\" → Ask questions → Give personalized styling tips\n\n## When to Use Scraper API Tool\n\n### For Product Searches Only\n\nWhen user requests products (e.g., \"I want sneakers under ₹3000\" or \"show me dresses\"), follow these steps:\n\n1. **Extract the search query** from user's message\n2. **Build the Amazon India search URL**:\n   - Format: `https://www.amazon.in/s?k=SEARCH_QUERY`\n   - Replace spaces with `+` in the query\n   - Example: \"white sneakers under 3000\" → `https://www.amazon.in/s?k=white+sneakers+under+3000`\n\n3. **Call the Scraper API tool** with the Amazon URL as the `url` parameter\n   - The tool already has api_key configured\n   - You only need to provide the Amazon search URL\n\n4. **Parse the response** and extract:\n   - Product name\n   - Price\n   - Rating\n   - Product URL\n\n5. **Show top 5 products** in clean format\n\n**Example Flow:**\n- User says: \"show me running shoes under 2000\"\n- You create URL: `https://www.amazon.in/s?k=running+shoes+under+2000`\n- Call tool with this URL\n- Display top 5 results from the scraped data\n\n## Styling Consultant Mode\n\nWhen user asks for styling advice (without wanting to search products):\n\n**Step 1: Understand the Context**\nAsk clarifying questions:\n- \"What's the occasion? (casual/formal/party/wedding/office)\"\n- \"What's your preferred style? (traditional/western/fusion)\"\n- \"Any color preferences?\"\n- \"What season/weather?\"\n\n**Step 2: Give Personalized Styling Tips**\nBased on their answers, provide:\n\n- Outfit combinations (top + bottom + footwear)\n- Color coordination suggestions\n- Accessory recommendations (jewelry, bags, belts)\n- Fabric/material suggestions for the occasion\n- Styling hacks or pro tips\n\n## Response Format\n\n**For Products:**\n**Product Name**\nPrice: ₹XXXX\nRating: X.X\n[View](amazon-link)\n\n**For Styling Advice:**\n[Emoji] [Product/Occasion Name] - [Style Type]\n[Item Category]: Specific suggestion\nPro tip: Helpful styling hack\nWant me to search for any of these items?\n\n## Important Rules\n\n- **Product searches**: Always use the Scraper API tool by passing the Amazon India search URL\n- **Styling advice**: Have a conversation first, understand context\n- Search Amazon India only (amazon.in)\n- Only show real data from Scraper API response\n- Never make up product details\n- Show maximum 5 products per search\n- Keep messages short and friendly\n- Always offer to search products after giving styling tips\n- If scraping fails, inform user politely and suggest they try again"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        976,
+        144
+      ],
+      "id": "991a64ad-4c19-4bd9-8d53-315549d7d1f0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        912,
+        352
+      ],
+      "id": "1d4bae89-2170-4325-8ca2-3bbf69cb2f1e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to scrape webpage content from any URL.\nInput should contain the URL of the website to scrape.",
+        "url": "https://api.scraperapi.com",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "YOUR_SCRAPERAPI_KEY_HERE"
+            },
+            {
+              "name": "url",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {},
+        "optimizeResponse": true,
+        "responseType": "html",
+        "cssSelector": "div.s-search-results",
+        "onlyContent": "={{ $fromAI('Return_Only_Content', ``, 'boolean') }}"
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1232,
+        336
+      ],
+      "id": "8777c815-2e2b-4094-ae58-577e416e4198",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        96
+      ],
+      "id": "11316f40-ef7f-490a-9c0b-05815ed1c610",
+      "name": "Send a text message",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cc422ad7-2622-4988-94ee-02a25ebfbd75",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        112
+      ],
+      "id": "a49da579-b739-4000-a2a9-ce63716c0e0a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        -48
+      ],
+      "id": "e39f9af7-38e9-44d4-b22d-06dfb95ee01b",
+      "name": "Get a file",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "temperature",
+              "value": "0"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        -48
+      ],
+      "id": "3de14df7-2cee-4a4d-ab06-b3354d38fc60",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "for item in _items:\n    updated_filename = item[\"binary\"][\"data\"][\"fileName\"].replace(\".oga\", \".ogg\")\n    item[\"binary\"][\"data\"][\"fileName\"] = updated_filename\n\nreturn _items"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -48
+      ],
+      "id": "6ada3671-14d7-4a45-adc4-ca36b50c9b3b",
+      "name": "Code in Python"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        688,
+        256
+      ],
+      "id": "01dad423-8dee-4ce1-973c-61d348995816",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.from.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        352
+      ],
+      "id": "3243c311-6a71-45c1-a106-673831654686",
+      "name": "Simple Memory"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Code in Python",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

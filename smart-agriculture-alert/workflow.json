@@ -1,0 +1,411 @@
+{
+  "name": "Smart Agriculture Alert System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        192
+      ],
+      "id": "8abd0657-955d-41f1-989b-eb7fa4c4eb22",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data }}",
+        "options": {
+          "systemMessage": "You are an AI Agricultural Risk Analysis System designed to help farmers detect potential threats to crops using weather data, soil conditions, and agriculture news.\n\nYour job is to analyze the provided data and identify possible risks that could damage crops such as wheat, rice, maize, cotton, soybean, or vegetables.\n\nYou will receive the following data inputs:\n\nWeather Data: {{$json.weather}}\n- Temperature\n- Humidity\n- Rainfall\n- Wind Speed\n- Weather condition\n- Forecast data\n\nSoil Data: {{$json.soil}}\n- Soil temperature\n- Soil moisture\n- Evapotranspiration\n- Soil humidity\n\nAgriculture Data: {{$json.news}}\n- Latest agriculture news from India\n- Crop disease alerts\n- Pest outbreak warnings\n- Agriculture department advisories\n\nUse agriculture terminology when explaining conditions.\nAvoid using terms like \"skin temperature\".\nInstead use terms like soil temperature, ground temperature, or surface temperature.\n\nYour task is to perform the following steps:\n\nStep 1 – Weather Risk Analysis\nAnalyze weather parameters and detect risks such as:\n- Excess rainfall (risk of fungal diseases)\n- High humidity (fungus and pest growth)\n- Very high temperature (crop heat stress)\n- Very low temperature (crop damage or frost)\n- Strong winds (crop lodging)\n- Drought conditions\n\nStep 2 – Soil Condition Analysis\nEvaluate soil conditions and detect issues such as:\n- High soil temperature affecting root health\n- Low soil moisture indicating drought stress\n- Excess soil moisture leading to root rot\n- Poor evapotranspiration indicating water imbalance\n\nStep 3 – Crop Disease and Pest Detection\nAnalyze agriculture news and advisories to identify:\n- Crop disease outbreaks\n- Pest attacks\n- Fungal infections\n- Region-specific agriculture warnings\n\nStep 4 – Combine All Signals\nCorrelate weather risks, soil risks, and agriculture alerts to determine if crops are at risk.\n\nStep 5 – Generate Farmer Alert\nIf a risk exists, generate a clear warning message for farmers explaining:\n\n1. What problem is detected\n2. What is causing the problem\n3. Which crops may be affected\n4. Recommended preventive action\n\nOutput Format:\n\nALERT LEVEL: (Low / Medium / High)\n\nProblem Detected:\nExplain the main threat affecting crops.\n\nCause:\nExplain the environmental or biological reason.\n\nAffected Crops:\nList crops that may be impacted.\n\nRecommended Action:\nProvide 2–4 practical steps farmers should take.\n\nImportant:\nIf no major risk is detected, output:\n\nALERT LEVEL: Safe\n\nCurrent conditions do not indicate any immediate crop threat. Continue regular monitoring of weather and soil conditions.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        656,
+        192
+      ],
+      "id": "975a0acb-d89e-4dc0-8914-70a6b9361b2e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "agriculture"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "apiKey",
+              "value": "YOUR_NEWSAPI_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        416
+      ],
+      "id": "f3c805b3-1627-4dc7-8596-a873e111d0d9",
+      "name": "news api"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "agriculture india"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "apiKey",
+              "value": "YOUR_NEWSAPI_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "e3d797f3-d391-42d1-9501-53f354b3f26c",
+      "name": "Indias Agriculture News"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "YOUR_CITY_HERE"
+            },
+            {
+              "name": "appid",
+              "value": "YOUR_OPENWEATHERMAP_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        192
+      ],
+      "id": "ef707aae-91e3-4a5f-b145-8e649d8452e3",
+      "name": "Temperature Humidity"
+    },
+    {
+      "parameters": {
+        "url": "https://api.weatherbit.io/v2.0/forecast/agweather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lat",
+              "value": "YOUR_LATITUDE_HERE"
+            },
+            {
+              "name": "lon",
+              "value": "YOUR_LONGITUDE_HERE"
+            },
+            {
+              "name": "key",
+              "value": "YOUR_WEATHERBIT_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        384
+      ],
+      "id": "d9a29ae9-c640-4a96-a8e2-501b68f38c05",
+      "name": "Weather Bit1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        416
+      ],
+      "id": "359e7329-7adb-40eb-a8d6-b1a20171a835",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        208,
+        176
+      ],
+      "id": "9ff3d558-d498-42ae-a9b1-f7f22f8e9217",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        432,
+        192
+      ],
+      "id": "882caf67-1ca3-4ed8-85f0-ec5ba9fcd63a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf6bad5b-4fc1-42db-8b02-78cacc0392aa",
+              "leftValue": "Risk Level",
+              "rightValue": "Low",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1008,
+        192
+      ],
+      "id": "9c24465d-b37b-442a-8ee1-4ea24d83dace",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL_HERE",
+        "subject": "Smart Agriculture Alert System",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        208
+      ],
+      "id": "4b9c96ee-90ea-4b17-93e6-c3d9ef9720f3",
+      "name": "Send a message",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Indias Agriculture News",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Temperature Humidity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Weather Bit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "news api": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Indias Agriculture News": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Temperature Humidity": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Weather Bit1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

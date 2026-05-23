@@ -1,0 +1,205 @@
+{
+  "name": "LinkedIn Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "YOUR_WEBHOOK_PATH_HERE",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "10a5076b-9ef7-4eec-8e17-b8124fa08fd5",
+      "name": "Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        208
+      ],
+      "id": "1f2a7070-e274-4bc4-b64c-fa3c30a62e84",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "= System: \"You are a social media strategist with expertise in content adaptation\"\n\n  User: \"Analyze this article and create a summary that:\n  1. Captures the 3 most important insights\n  2. Includes any actionable advice or tips\n  3. Maintains the original tone and perspective\n  4. Highlights implications for the target audience\n  5. Stays under 200 words for social media adaptation\n  \n  Article:  {{ $json.body.text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        208,
+        0
+      ],
+      "id": "19a6ac9c-c0f1-4348-a8ed-57435ed1ece9",
+      "name": "Article Summarizer"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        208
+      ],
+      "id": "028fdd3e-28ca-4110-931d-565bfd143ce0",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "person": "YOUR_LINKEDIN_PERSON_ID_HERE",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        912,
+        0
+      ],
+      "id": "f3141126-44be-4f91-a723-88ecc2be8a8e",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_LINKEDIN_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Transform this learning summary into an engaging LinkedIn post: {{ $json.text }}\n\nCreate a post that:\n- Starts with a hook about today's learning achievement\n- Shares 2-3 specific insights or skills gained\n- Includes a reflection on how this knowledge applies to real-world scenarios\n- Uses relevant hashtags: #AIBootcamp #LearningJourney #GenerativeAI #TechSkills #100DaysOfCode\n- Ends with a question to engage the community\n- Length: 200-300 words\n- Professional yet authentic tone\n- Include relevant emojis for visual appeal\n\nFormat with line breaks for readability. Start directly with the post content.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        560,
+        0
+      ],
+      "id": "988fc95a-5d07-4380-9251-54700eeefaab",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "successful posting",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "151590ec-21b4-47e2-adde-77a2e264373d",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Article Summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Article Summarizer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Article Summarizer": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a post": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

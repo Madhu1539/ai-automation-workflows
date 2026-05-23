@@ -1,0 +1,233 @@
+{
+  "name": "Learning Path Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e0ffad25-d355-46f1-b678-fca43d1ab98b",
+      "name": "When chat message received",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a day-wise learning path generator. When given a learning goal, create a curriculum with Google Docs and Calendar events.\nSTEP 1: PLAN THE CURRICULUM\nPlan the topics based on the number of days requested. Structure from beginner to advanced.\nSTEP 2: DETERMINE START DATE\n\nIf user says \"starting tomorrow\" → use tomorrow's date\nIf user says \"starting next Monday\" → calculate next Monday\nIf user says \"starting from [date]\" → use that date\nIf NO date mentioned → use TODAY's date\nToday is {{$now.format('YYYY-MM-DD')}}\n\nSTEP 3: RESEARCH RESOURCES\nUse SerpAPI 2-3 times total to find:\n\nYouTube videos\nArticles\nDocumentation\nExtract real URLs from results.\n\nSTEP 4: CREATE GOOGLE DOCUMENT\nCall \"Create a document in Google Docs\" tool with title \"[X]-Day [Topic] Learning Path\"\nNote the document ID from response.\nSTEP 5: UPDATE GOOGLE DOCUMENT\nCall \"Update a document in Google Docs\" once with all days' content in this format:\nDay 1: [Topic Name]\nDescription: [2-3 sentence overview]\nKey Learning Points:\n\n[Point 1]\n[Point 2]\n[Point 3]\nReference Links:\nVideo: [YouTube URL]\nArticle: [Article URL]\nDuration: 2 hours\n\nRepeat for all days.\nSTEP 6: CREATE CALENDAR EVENTS\nCreate events one by one. For each day:\n\nTime: 11:00 AM to 1:00 PM (2 hours)\nTimezone: +05:30\nFormat: YYYY-MM-DDTHH:MM:SS+05:30\n\nDate calculation:\n\nDay 1: START_DATE at 11:00 AM\nDay 2: START_DATE + 1 day at 11:00 AM\nDay 3: START_DATE + 2 days at 11:00 AM\nContinue incrementing by 1 day.\n\nCall \"Create an event in Google Calendar\" separately for each day with:\n\nStart: [DATE]T11:00:00+05:30\nEnd: [DATE]T13:00:00+05:30\nSummary: Day X: [Topic]\nDescription: [Full day content]\nUse_Default_Reminders: true\n\nSTEP 7: PROVIDE FINAL OUTPUT\nAfter all events are created, respond with:\n\"Learning Path Complete!\nDocument: [Google Docs URL]\nCalendar: I've added [X] events from [START_DATE] to [END_DATE] at 11:00 AM.\nYour [X]-day [topic] learning journey is ready!\"\nThen stop immediately.\nCRITICAL RULES:\n\nUse SerpAPI only 2-3 times total\nCreate Doc once\nUpdate Doc once with all content\nCreate calendar events separately for each day\nAlways use T11:00:00+05:30 for start time\nAlways use T13:00:00+05:30 for end time\nIncrement date by 1 for each day\nStop after providing final output\nNever leave Summary or Description empty\nCalculate start date from user input or use today"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "32e2727f-394d-4645-80ec-52b2bc5d89cd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        224
+      ],
+      "id": "33f53f56-94cc-4d7f-9fb2-6c3664fa35b7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        704,
+        240
+      ],
+      "id": "ab1d3cae-3223-488d-86ee-98378f0919ad",
+      "name": "Create a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Doc_ID_or_URL', ``, 'string') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        896,
+        224
+      ],
+      "id": "06d3dca9-c802-452a-b0f7-3eb8770c7c62",
+      "name": "Update a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "YOUR_CALENDAR_EMAIL_HERE",
+          "mode": "list",
+          "cachedResultName": "YOUR_CALENDAR_EMAIL_HERE"
+        },
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1104,
+        224
+      ],
+      "id": "7660c45b-5d99-4cd1-9cf1-46083e613164",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_CALENDAR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        560,
+        224
+      ],
+      "id": "c9e3735a-16ba-47a5-bda4-decec4d342a2",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_SERPAPI_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Create a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

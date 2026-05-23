@@ -1,0 +1,259 @@
+{
+  "name": "Learning Path Generator (Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text }}",
+        "options": {
+          "systemMessage": "You are a day-wise learning path generator. When given a learning goal, create a curriculum with Google Docs and Calendar events.\nSTEP 1: PLAN THE CURRICULUM\nPlan the topics based on the number of days requested. Structure from beginner to advanced.\nSTEP 2: DETERMINE START DATE\n\nIf user says \"starting tomorrow\" → use tomorrow's date\nIf user says \"starting next Monday\" → calculate next Monday\nIf user says \"starting from [date]\" → use that date\nIf NO date mentioned → use TODAY's date\nToday is {{$now.format('YYYY-MM-DD')}}\n\nSTEP 3: RESEARCH RESOURCES\nUse SerpAPI 2-3 times total to find:\n\nYouTube videos\nArticles\nDocumentation\nExtract real URLs from results.\n\nSTEP 4: CREATE GOOGLE DOCUMENT\nCall \"Create a document in Google Docs\" tool with title \"[X]-Day [Topic] Learning Path\"\nNote the document ID from response.\nSTEP 5: UPDATE GOOGLE DOCUMENT\nCall \"Update a document in Google Docs\" once with all days' content in this format:\nDay 1: [Topic Name]\nDescription: [2-3 sentence overview]\nKey Learning Points:\n\n[Point 1]\n[Point 2]\n[Point 3]\nReference Links:\nVideo: [YouTube URL]\nArticle: [Article URL]\nDuration: 2 hours\n\nRepeat for all days.\nSTEP 6: CREATE CALENDAR EVENTS\nCreate events one by one. For each day:\n\nTime: 11:00 AM to 1:00 PM (2 hours)\nTimezone: +05:30\nFormat: YYYY-MM-DDTHH:MM:SS+05:30\n\nSTEP 7: PROVIDE FINAL OUTPUT\nAfter all events are created, respond with the Google Doc URL and calendar summary.\nThen stop immediately.\nCRITICAL RULES:\n\nUse SerpAPI only 2-3 times total\nCreate Doc once\nUpdate Doc once with all content\nCreate calendar events separately for each day\nAlways use T11:00:00+05:30 for start time\nAlways use T13:00:00+05:30 for end time\nIncrement date by 1 for each day\nStop after providing final output\nNever leave Summary or Description empty\nCalculate start date from user input or use today"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c9b9149c-7c00-4e13-8822-42e23e2ca515",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        224
+      ],
+      "id": "83a5b5f3-57ba-475a-a2b1-4c7f8ffea100",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        720,
+        208
+      ],
+      "id": "b19536b0-27b6-4a2d-ae75-4c0811bb482b",
+      "name": "Create a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Doc_ID_or_URL', ``, 'string') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        896,
+        192
+      ],
+      "id": "9f675bf2-5e6c-41a2-8ae3-a0f45bff52c1",
+      "name": "Update a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "YOUR_CALENDAR_EMAIL_HERE",
+          "mode": "list",
+          "cachedResultName": "YOUR_CALENDAR_EMAIL_HERE"
+        },
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        208
+      ],
+      "id": "3c234cad-f63d-47d4-84b3-8511b4974efa",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_CALENDAR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        592,
+        208
+      ],
+      "id": "f2e04f26-37e4-4c4c-a98b-9f9561205ba7",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_SERPAPI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "YOUR_WEBHOOK_PATH_HERE",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        64,
+        16
+      ],
+      "id": "c03330d8-da55-4d6e-839f-bf0d0620b56e",
+      "name": "Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        0
+      ],
+      "id": "702e4363-2eb8-4cce-8195-a0e7baa57850",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

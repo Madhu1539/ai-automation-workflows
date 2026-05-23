@@ -1,0 +1,247 @@
+{
+  "name": "Learning Path Generator with Memory",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "af1ee684-6d29-4624-9b7d-f58bd44c61cc",
+      "name": "When chat message received",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a day-wise learning path generator. When given a learning goal, create a curriculum with Google Docs and Calendar events.\n\nSTEP 1: PLAN THE CURRICULUM\nPlan the topics based on the number of days requested. Structure from beginner to advanced.\n\nSTEP 2: DETERMINE START DATE\nIf user says \"starting tomorrow\" → use tomorrow's date\nIf user says \"starting next Monday\" → calculate next Monday\nIf user says \"starting from [date]\" → use that date\nIf NO date mentioned → use TODAY's date\nToday is {{$now.format('YYYY-MM-DD')}}\n\nSTEP 3: RESEARCH RESOURCES\nSearch 2-3 times and extract ACTUAL URLs for each search:\n- Search \"[Topic] beginner tutorial\" → Extract the actual https:// link\n- Search \"[Topic] official documentation\" → Extract the actual https:// link\n- Search \"[Topic] YouTube course\" → Extract the actual https:// link\nStore the complete URLs (starting with https://)\n\nSTEP 4: CREATE DOCUMENT\nCreate a new document titled \"[X]-Day [Topic] Learning Path\"\nStore the document ID from the response.\n\nSTEP 5: UPDATE DOCUMENT WITH CONTENT AND URLS\nUpdate the document with this exact format, inserting actual extracted URLs:\n\nDay 1: [Topic Name]\nDescription: [2-3 sentences]\nKey Learning Points:\n- [Point 1]\n- [Point 2]\n- [Point 3]\nReference Links:\nVideo: [YouTube URL - must be https://www.youtube.com/...]\nArticle: [Article URL - must be https://...]\nDocumentation: [Docs URL - must be https://...]\nDuration: 2 hours\n\nRepeat for all days. ALWAYS include the complete https:// link after each label.\n\nSTEP 6: CREATE CALENDAR EVENTS\nFor each day, create one event:\n- Title: \"Day X: [Topic Name]\"\n- Date: Calculate day-wise (Day 1 = START_DATE, Day 2 = START_DATE+1, etc.)\n- Start Time: 11:00:00+05:30\n- End Time: 13:00:00+05:30\n- Description: Include key learning points and all reference links with https:// URLs\n\nSTEP 7: FINAL OUTPUT\nRespond with:\n\"Learning Path Complete!\nDocument: [Google Docs URL]\nCalendar: I've added [X] events from [START_DATE] to [END_DATE] at 11:00 AM.\nYour [X]-day [topic] learning journey is ready!\"\n\nCRITICAL:\n- Every reference link MUST be a complete URL starting with https://\n- Do NOT insert link titles - insert actual URLs only\n- Format: \"Video: https://www.youtube.com/...\" NOT \"Video: [Title Name]\"\n- All calendar event descriptions must include the actual https:// URLs\n- Search results must provide complete, clickable links"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5a35a554-bedd-4cf0-ac0b-8a8689cb0aaf",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        256
+      ],
+      "id": "4578fe11-0d60-4e23-80af-8ebb882e147c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        336,
+        256
+      ],
+      "id": "622d87e5-6b63-4676-8f8e-45126a21a4bf",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_SERPAPI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        480,
+        240
+      ],
+      "id": "6021baef-5c2a-456c-bc98-9a248739b43b",
+      "name": "Create a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Doc_ID_or_URL', ``, 'string') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        640,
+        240
+      ],
+      "id": "83bbd1eb-6bbf-445d-87a3-82a33af1cee0",
+      "name": "Update a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_DOCS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "YOUR_CALENDAR_EMAIL_HERE",
+          "mode": "list",
+          "cachedResultName": "YOUR_CALENDAR_EMAIL_HERE"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        240
+      ],
+      "id": "86a46f0c-8a5d-45e3-bad3-5501f5099d88",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_CALENDAR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        272
+      ],
+      "id": "81f0f70f-fc26-4ee6-a615-4075ddd67f3a",
+      "name": "Simple Memory"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
